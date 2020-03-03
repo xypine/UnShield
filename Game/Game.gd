@@ -11,8 +11,8 @@ func _ready():
 	server_camera.current = get_tree().is_network_server()
 	if not get_tree().is_network_server():
 		create_player(get_tree().get_network_unique_id())
-	addBox()
-
+	addBox(0,0,0)
+	loadLevel("res://levels/test.level")
 
 func _unhandled_input(event):
 	if event is InputEventKey:
@@ -38,6 +38,44 @@ func create_player(id : int):
 	new_player.name = str(id)
 	new_player.network_id = id
 	players.add_child(new_player)
-func addBox():
+func addBox(x : int, y : int, z : int):
 	var new_box = preload("res://models/cube.tscn").instance()
 	boxes.add_child(new_box)
+	new_box.translate(Vector3(x,y,z))
+var level_w = 0
+var level_h = 0
+func loadLevel(path):
+	var raw = load_text_file(path)
+# warning-ignore:unused_variable
+	var rows = []
+	var buffer = ""
+	for i in raw:
+		if i != "\n":
+			buffer = buffer + i
+		else:
+			rows.append(buffer)
+			buffer = ""
+	print("Level has "+ str(rows.size()) + " rows")
+	print(rows)
+	if not rows.empty() and not rows[0].empty():
+		level_h = int(len(rows))
+		level_w = int(rows[0])
+	var x = int(0)
+	var y = int(0)
+	for i in rows:
+		y = int(0)
+		for xz in i:
+			if xz != "-":
+				addBox(int(int(x)*20),int(int(int(xz)-1)),int(int(y)*20))
+				print("New box at: " + str(int(x)*10) + ", " + str(int(y)*10))
+			y = y + int(1)
+		x = x + int(1)
+func load_text_file(path):
+	var f = File.new()
+	var err = f.open(path, File.READ)
+	if err != OK:
+		printerr("Could not open file, error code ", err)
+		return ""
+	var text = f.get_as_text()
+	f.close()
+	return text

@@ -8,6 +8,7 @@ onready var walk_player := $WalkPlayer
 onready var sprint_player := $SprintPlayer
 onready var jump_player := $JumpPlayer
 onready var crosshair := $Crosshair
+onready var coll := $CollisionShape
 
 var is_me := true
 var network_id := -1
@@ -17,7 +18,7 @@ var sneaking := false setget set_sneaking
 
 const GRAVITY := 0.2
 const JUMP_FORCE_BASE := 4.0
-const JUMP_FORCE_MAX := 6.5
+const JUMP_FORCE_MAX := 15.0
 const MOVEMENT_SPEED := 0.1
 const SPRINTING_MULTIPLIER := 1.2
 const MOUSE_SENSITIVITY := 600.0
@@ -45,6 +46,9 @@ var flashOn = false
 var JUMP_FORCE = JUMP_FORCE_BASE * 1
 
 func _physics_process(_delta):
+	if(global_transform.origin[1] < -10):
+		print("You fell...")
+		global_transform.origin = Vector3(0,0,0)
 	var movement_input := get_movement_input() * get_movement_speed_multiplier()
 	move_and_collide(movement_input.rotated(Vector3.UP, rotation.y))
 	if Input.is_key_pressed(KEY_F) and flash_k_cool < 1:
