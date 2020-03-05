@@ -8,3 +8,9 @@ extents = Vector3( 100, 100, 100 )
 origin_offset = Vector3( 0, -2.23517e-10, 0 )
 interior_ambient_color = Color( 1, 1, 1, 1 )
 script = SubResource( 1 )
+
+[node name="GIProbe" type="GIProbe" parent="."]
+extents = Vector3( 50, 50, 50 )
+
+[node name="BakedLightmap" type="BakedLightmap" parent="."]
+bake_extents = Vector3( 50, 50, 50 )

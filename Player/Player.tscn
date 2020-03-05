@@ -65,13 +65,13 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.26737, 0 )
 
 [node name="SpotLight" type="SpotLight" parent="CameraSocket"]
 transform = Transform( 1, 0, 0, 0, 0.972529, -0.232783, 0, 0.232783, 0.972529, 0, -0.368344, -0.61 )
-light_color = Color( 0.768627, 0.905882, 0.996078, 1 )
+light_color = Color( 0.5074, 0.59, 0.59, 1 )
 light_energy = 0.66
 light_indirect_energy = 2.38
 light_specular = 1.0
 shadow_enabled = true
 spot_range = 95.8
-spot_angle = 31.5
+spot_angle = 39.3
 
 [node name="RayCast" type="RayCast" parent="CameraSocket"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.732608 )
@@ -113,3 +113,12 @@ material = ExtResource( 5 )
 position = Vector2( 512, 330 )
 scale = Vector2( 10, 10 )
 mesh = SubResource( 5 )
+
+[node name="TeleportLight" type="OmniLight" parent="."]
+visible = false
+light_color = Color( 0.658824, 0.00784314, 0.596078, 1 )
+light_energy = 5.04
+light_indirect_energy = 3.75
+light_specular = 1.0
+light_bake_mode = 0
+omni_range = 62.2

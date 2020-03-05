@@ -25,10 +25,10 @@ var sneaking := false setget set_sneaking
 
 const GRAVITY := 0.2
 const JUMP_FORCE_BASE := 4.0
-const JUMP_FORCE_MAX := 12.5
+const JUMP_FORCE_MAX := 11
 const JUMP_FORCE_REGEN := 0.2
 const MOVEMENT_SPEED := 0.1
-const SPRINTING_MULTIPLIER := 2
+const SPRINTING_MULTIPLIER := 3.2
 const MOUSE_SENSITIVITY := 600.0
 
 func _ready():
@@ -47,7 +47,7 @@ func _ready():
 	rset_config("rotation", MultiplayerAPI.RPC_MODE_REMOTE)
 	
 	get_tree().connect("connected_to_server", self, "_on_connected_to_server")
-	flash.hide()
+	#flash.hide()
 
 var flash_k_cool = 0
 var flashOn = false
@@ -59,25 +59,57 @@ var from = Vector3(0,0,0)
 var teleport_cooldown = 0
 var teleport_drawer
 var pointer
+
+var targetTrue = false
 func _physics_process(_delta):
 	if(global_transform.origin[1] < -20):
 		print("You fell...")
 		#global_transform.origin = Vector3(0,10,0)
-		translate(Vector3(0, 20, 0))
+		#translate(Vector3(0, 20, 0))
 	
 	#reflectionProbe.translation = camera.translation
 	#reflectionProbe.translation[2] = -reflectionProbe.translation[2]
 	raycaster.force_raycast_update( )
 	if raycaster.is_colliding():
+			#$MeshInstance.material_override.albedo_color = "ff7e00"
 			to = raycaster.get_collision_point ( )
-			
-			if Input.is_key_pressed(KEY_E) and teleport_cooldown < 10:
-				global_transform.origin = to
-				teleport_cooldown = teleport_cooldown + 20
+			if "teleportTarget" in raycaster.get_collider():
+				#print("Teleport target found!")
+				#$TeleportLight.light_color = "ff7e00"
+				pointer.get_child(0).light_color = "00ff00"
+				pointer.get_child(0).light_energy = 9
+				pointer.get_child(0).omni_range = 10
+				teleport_drawer.get_material_override().emission = "00ff00"
+				targetTrue = true
 			else:
-				teleport_cooldown = teleport_cooldown - 1 
+				pointer.get_child(0).light_color = "ff7e00"
+				pointer.get_child(0).light_energy = 1
+				pointer.get_child(0).omni_range = 5
+				teleport_drawer.get_material_override().emission = "ff7e00"
+				targetTrue = false
+	if (is_on_wall()) and JUMP_COOLDOWN >= 10:
+		#vertical_velocity = vertical_velocity +5
+		global_transform.origin[1] = global_transform.origin[1] + 0
+	if Input.is_key_pressed(KEY_E) and JUMP_COOLDOWN < 10:
+				global_transform.origin = to
+				#global_transform.origin[1] = global_transform.origin[1] + 1
+				$TeleportLight.light_energy = 5.04
+				$TeleportLight.show()
+				JUMP_COOLDOWN = JUMP_COOLDOWN +1
+				if(targetTrue):
+					vertical_velocity = vertical_velocity +3.2
+	else:
+				if $TeleportLight.light_energy > 0:
+					$TeleportLight.light_energy = $TeleportLight.light_energy - 0.25
+				else:
+					$TeleportLight.hide()
+	#else:
+		#teleport_cooldown = teleport_cooldown - 1 
+	var teleportTarget
+	
 	if is_instance_valid(teleport_drawer):
-		var line = [flash.global_transform.origin, to, to.normalized().reflect(flash.global_transform.origin)]
+		#flash.global_transform.origin
+		var line = [to, to + Vector3(0,2,0)]
 		#var line = [Vector3(global_transform.origin[0],global_transform.origin[1],global_transform.origin[2]), from]
 		teleport_drawer.point_set = line
 	if is_instance_valid(pointer):
@@ -169,4 +201,4 @@ func get_movement_input() -> Vector3:
 
 
 func get_movement_speed_multiplier() -> float:
-	return MOVEMENT_SPEED * (SPRINTING_MULTIPLIER if Input.is_action_pressed("sprint") else 1.0)
+	return MOVEMENT_SPEED * (SPRINTING_MULTIPLIER + (abs(vertical_velocity * 0.04)) if Input.is_action_pressed("sprint") else 1.0)

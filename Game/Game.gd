@@ -45,7 +45,7 @@ func create_player(id : int):
 	new_player.teleport_drawer = new_draw
 	new_player.cubemap = new_reflect
 	new_player.pointer = new_point
-	reflectors.add_child(new_reflect)
+	#reflectors.add_child(new_reflect)
 	reflectors.add_child(new_draw)
 	reflectors.add_child(new_point)
 func addBox(x : int, y : int, z : int):
@@ -54,10 +54,17 @@ func addBox(x : int, y : int, z : int):
 	new_box.translate(Vector3(x,y,z))
 	new_box.get_child(0)
 	return new_box
+func addEnemy(x : int, y : int, z : int):
+	var new_box = preload("res://models/enemy01.tscn").instance()
+	boxes.add_child(new_box)
+	new_box.translate(Vector3(x,y,z))
+	new_box.get_child(0)
+	return new_box
 var level_w = 0
 var level_h = 0
-const recursion_depth_up = 7.0
-const recursion_depth_down = 7.0
+#7.0
+const recursion_depth_up = 1.0
+const recursion_depth_down = 0.0
 func loadLevel(path):
 	var raw = load_text_file(path)
 	var alt_mat = preload("res://Materials/FPBR_Ground01/ground01.tres")
@@ -80,14 +87,27 @@ func loadLevel(path):
 	for i in rows:
 		y = int(0)
 		for xz in i:
-			if xz != "-":
+			if xz != "-" and xz != "*":
 				for i in range(recursion_depth_down):
 					addBox(int(int(x)*20),int(int(int(xz)-1) - int(10*i)),int(int(y)*20))
-				for i in range(recursion_depth_up):
-					addBox(int(int(x)*20),int(int(int(xz)-1) + int(10*i)),int(int(y)*20)).get_child(0).material_override = alt_mat
-				print("New box at: " + str(int(x)*10) + ", " + str(int(y)*10))
+				for i in range(recursion_depth_up):#.material_override = alt_mat
+					addBox(int(int(x)*20),int(int(int(xz)-1) + int(10*i)),int(int(y)*20)).get_child(0)
+				#print("New box at: " + str(int(x)*10) + ", " + str(int(y)*10))
+			if xz == "*":
+				for i in range(recursion_depth_down):
+					addEnemy(int(int(x)*20),int(int(int(xz)-1) - int(10*i)),int(int(y)*20))
+				for i in range(recursion_depth_up):#.material_override = alt_mat
+					addEnemy(int(int(x)*20),int(int(int(xz)-1) + int(10*i)),int(int(y)*20)).get_child(0)
 			y = y + int(1)
 		x = x + int(1)
+	for i in recursion_depth_down:
+		var new_reflect = preload("res://Player/ReflectionProbe.tscn").instance()
+		new_reflect.translate(Vector3(level_w/2,i - int(10*i),level_h/2))
+		reflectors.add_child(new_reflect)
+	for i in recursion_depth_up:
+		var new_reflect = preload("res://Player/ReflectionProbe.tscn").instance()
+		new_reflect.translate(Vector3(level_w/2,i + int(10*i),level_h/2))
+		reflectors.add_child(new_reflect)
 func load_text_file(path):
 	var f = File.new()
 	var err = f.open(path, File.READ)
@@ -97,9 +117,11 @@ func load_text_file(path):
 	var text = f.get_as_text()
 	f.close()
 	return text
-func _physics_process(_delta):
-	for i in players.get_children():
-		var map = i.cubemap 
+#func _physics_process(_delta):
+	#for i in players.get_children():
+		#var map = i.cubemap 
+		#var pointer = i.pointer
+		#map.translation = pointer.translation
 		#map.translation[0] = i.translation[0]
 		##map.translation[1] = -i.translation[1]-14.9
 		#map.translation[1] = i.translation[1]
