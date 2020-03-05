@@ -1,6 +1,7 @@
 extends Spatial
 
 onready var players := $Players
+onready var reflectors := $reflectors
 onready var boxes := $Boxes
 onready var server_camera := $ServerCamera
 
@@ -21,7 +22,7 @@ func _unhandled_input(event):
 	if event is InputEventJoypadButton:
 		if event.button_index == JOY_BUTTON_11:
 			get_tree().quit()
-
+	
 
 func _on_network_peer_connected(id):
 	if id != 1:
@@ -35,17 +36,31 @@ func _on_network_peer_disconnected(id):
 
 func create_player(id : int):
 	var new_player = preload("res://Player/Player.tscn").instance()
+	var new_reflect = preload("res://Player/ReflectionProbe.tscn").instance()
+	var new_draw = preload("res://Player/draw.tscn").instance()
+	var new_point = preload("res://Player/pointer.tscn").instance()
 	new_player.name = str(id)
 	new_player.network_id = id
 	players.add_child(new_player)
+	new_player.teleport_drawer = new_draw
+	new_player.cubemap = new_reflect
+	new_player.pointer = new_point
+	reflectors.add_child(new_reflect)
+	reflectors.add_child(new_draw)
+	reflectors.add_child(new_point)
 func addBox(x : int, y : int, z : int):
 	var new_box = preload("res://models/cube.tscn").instance()
 	boxes.add_child(new_box)
 	new_box.translate(Vector3(x,y,z))
+	new_box.get_child(0)
+	return new_box
 var level_w = 0
 var level_h = 0
+const recursion_depth_up = 7.0
+const recursion_depth_down = 7.0
 func loadLevel(path):
 	var raw = load_text_file(path)
+	var alt_mat = preload("res://Materials/FPBR_Ground01/ground01.tres")
 # warning-ignore:unused_variable
 	var rows = []
 	var buffer = ""
@@ -66,7 +81,10 @@ func loadLevel(path):
 		y = int(0)
 		for xz in i:
 			if xz != "-":
-				addBox(int(int(x)*20),int(int(int(xz)-1)),int(int(y)*20))
+				for i in range(recursion_depth_down):
+					addBox(int(int(x)*20),int(int(int(xz)-1) - int(10*i)),int(int(y)*20))
+				for i in range(recursion_depth_up):
+					addBox(int(int(x)*20),int(int(int(xz)-1) + int(10*i)),int(int(y)*20)).get_child(0).material_override = alt_mat
 				print("New box at: " + str(int(x)*10) + ", " + str(int(y)*10))
 			y = y + int(1)
 		x = x + int(1)
@@ -79,3 +97,14 @@ func load_text_file(path):
 	var text = f.get_as_text()
 	f.close()
 	return text
+func _physics_process(_delta):
+	for i in players.get_children():
+		var map = i.cubemap 
+		#map.translation[0] = i.translation[0]
+		##map.translation[1] = -i.translation[1]-14.9
+		#map.translation[1] = i.translation[1]
+		##if map.translation[1] < -14.9:
+		##	map.translation[1] = -14.9
+		##map.translation[1] = 30
+		#map.translation[2] = i.translation[2]
+		##print(i.cubemap)

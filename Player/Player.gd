@@ -9,6 +9,13 @@ onready var sprint_player := $SprintPlayer
 onready var jump_player := $JumpPlayer
 onready var crosshair := $Crosshair
 onready var coll := $CollisionShape
+onready var indicator_jump := $JumpIndicator
+onready var raycaster := $CameraSocket/RayCast
+onready var lineDrawer := $ImmediateGeometry
+var indicator_base = preload("res://Materials/indicator_jump_base.tres")
+var indicator_hot = preload("res://Materials/indicator_jump_hot.tres")
+
+var cubemap : ReflectionProbe
 
 var is_me := true
 var network_id := -1
@@ -18,9 +25,10 @@ var sneaking := false setget set_sneaking
 
 const GRAVITY := 0.2
 const JUMP_FORCE_BASE := 4.0
-const JUMP_FORCE_MAX := 15.0
+const JUMP_FORCE_MAX := 12.5
+const JUMP_FORCE_REGEN := 0.2
 const MOVEMENT_SPEED := 0.1
-const SPRINTING_MULTIPLIER := 1.2
+const SPRINTING_MULTIPLIER := 2
 const MOUSE_SENSITIVITY := 600.0
 
 func _ready():
@@ -44,11 +52,37 @@ func _ready():
 var flash_k_cool = 0
 var flashOn = false
 var JUMP_FORCE = JUMP_FORCE_BASE * 1
+var JUMP_COOLDOWN = 0
 
+var to = Vector3(0,0,0)
+var from = Vector3(0,0,0)
+var teleport_cooldown = 0
+var teleport_drawer
+var pointer
 func _physics_process(_delta):
-	if(global_transform.origin[1] < -10):
+	if(global_transform.origin[1] < -20):
 		print("You fell...")
-		global_transform.origin = Vector3(0,0,0)
+		#global_transform.origin = Vector3(0,10,0)
+		translate(Vector3(0, 20, 0))
+	
+	#reflectionProbe.translation = camera.translation
+	#reflectionProbe.translation[2] = -reflectionProbe.translation[2]
+	raycaster.force_raycast_update( )
+	if raycaster.is_colliding():
+			to = raycaster.get_collision_point ( )
+			
+			if Input.is_key_pressed(KEY_E) and teleport_cooldown < 10:
+				global_transform.origin = to
+				teleport_cooldown = teleport_cooldown + 20
+			else:
+				teleport_cooldown = teleport_cooldown - 1 
+	if is_instance_valid(teleport_drawer):
+		var line = [flash.global_transform.origin, to, to.normalized().reflect(flash.global_transform.origin)]
+		#var line = [Vector3(global_transform.origin[0],global_transform.origin[1],global_transform.origin[2]), from]
+		teleport_drawer.point_set = line
+	if is_instance_valid(pointer):
+		pointer.global_transform.origin = to
+	#raycaster.cast_to
 	var movement_input := get_movement_input() * get_movement_speed_multiplier()
 	move_and_collide(movement_input.rotated(Vector3.UP, rotation.y))
 	if Input.is_key_pressed(KEY_F) and flash_k_cool < 1:
@@ -62,17 +96,31 @@ func _physics_process(_delta):
 		print("Flashlight on: " + str(flashOn))
 	elif flash_k_cool > -1:
 		flash_k_cool = flash_k_cool - 1
-	if is_on_floor() and Input.is_action_pressed("jump"):
+	indicator_jump.global_scale = Vector2(100-int(JUMP_COOLDOWN*10),3)
+	indicator_jump.global_position.x = get_viewport().size.x / 2
+	indicator_jump.global_position.y = get_viewport().size.y / 2 + 50
+	if JUMP_COOLDOWN < 10 and (is_on_floor() or is_on_wall()) and Input.is_action_pressed("jump"):
 		vertical_velocity = JUMP_FORCE
-		jump_player.play()
+		if JUMP_COOLDOWN < 3:
+			jump_player.play()
+		JUMP_COOLDOWN = JUMP_COOLDOWN + 3.4
+	elif is_on_floor() and not Input.is_action_pressed("jump"):
+		vertical_velocity = 0
 	else:
 		vertical_velocity -= GRAVITY
+		if JUMP_COOLDOWN > 10:
+			JUMP_COOLDOWN = JUMP_COOLDOWN + 0.95
+			indicator_jump.material = indicator_hot
+		else:
+			indicator_jump.material = indicator_base
+		if JUMP_COOLDOWN > 0:
+			JUMP_COOLDOWN = JUMP_COOLDOWN - 1
 	move_and_slide(Vector3.UP * vertical_velocity, Vector3.UP)
 	
 	if Input.is_action_pressed("sprint") and JUMP_FORCE < JUMP_FORCE_MAX - 1:
-		JUMP_FORCE = JUMP_FORCE + 0.1
+		JUMP_FORCE = JUMP_FORCE + JUMP_FORCE_REGEN
 	elif JUMP_FORCE > JUMP_FORCE_BASE + 1:
-		JUMP_FORCE = JUMP_FORCE -0.1
+		JUMP_FORCE = JUMP_FORCE -JUMP_FORCE_REGEN
 	
 	var sprint_pressed := Input.is_action_pressed("sprint")
 	var moving = Vector3(movement_input.x, 0, movement_input.z).length() > 0 and is_on_floor()
@@ -91,12 +139,13 @@ func _physics_process(_delta):
 	if connected_to_server:
 		rset_unreliable("translation", translation)
 
-
+const ray_length = 10000
 func _input(event):
+	
 	if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED and event is InputEventMouseMotion:
 		rotate_y(-event.relative.x / MOUSE_SENSITIVITY)
 		camera_socket.rotate_x(-event.relative.y / MOUSE_SENSITIVITY)
-		camera_socket.rotation_degrees.x = clamp(camera_socket.rotation_degrees.x, -60, 60)
+		camera_socket.rotation_degrees.x = clamp(camera_socket.rotation_degrees.x, -90, 90)
 		if connected_to_server:
 			rset_unreliable("rotation", rotation)
 

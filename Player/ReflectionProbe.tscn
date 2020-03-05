@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+
+[node name="ReflectionProbe" type="ReflectionProbe"]
+transform = Transform( 0.999848, 0, 0.0174524, 0, 1, 0, -0.0174524, 0, 0.999848, 0, 0, 0 )
+extents = Vector3( 100, 100, 100 )
+origin_offset = Vector3( 0, -2.23517e-10, 0 )
+interior_ambient_color = Color( 1, 1, 1, 1 )
+script = SubResource( 1 )

@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://Player/Sounds/jump.wav" type="AudioStream" id=1]
 [ext_resource path="res://Player/Sounds/walk.wav" type="AudioStream" id=2]
 [ext_resource path="res://Player/crosshair.png" type="Texture" id=3]
 [ext_resource path="res://Player/Player.gd" type="Script" id=4]
+[ext_resource path="res://Materials/indicator_jump_base.tres" type="Material" id=5]
 
 [sub_resource type="CapsuleMesh" id=1]
 radius = 0.5
@@ -43,6 +44,8 @@ tracks/0/keys = {
 "values": [ Vector3( 0, -1, 0 ), Vector3( 0, 0, 0 ) ]
 }
 
+[sub_resource type="CubeMesh" id=5]
+
 [node name="Player" type="KinematicBody"]
 script = ExtResource( 4 )
 
@@ -69,6 +72,11 @@ light_specular = 1.0
 shadow_enabled = true
 spot_range = 95.8
 spot_angle = 31.5
+
+[node name="RayCast" type="RayCast" parent="CameraSocket"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.732608 )
+enabled = true
+cast_to = Vector3( 0, 0, -100 )
 
 [node name="Crosshair" type="TextureRect" parent="."]
 anchor_right = 1.0
@@ -99,3 +107,9 @@ volume_db = -15.0
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 anims/Sneak = SubResource( 3 )
 anims/UnSneak = SubResource( 4 )
+
+[node name="JumpIndicator" type="MeshInstance2D" parent="."]
+material = ExtResource( 5 )
+position = Vector2( 512, 330 )
+scale = Vector2( 10, 10 )
+mesh = SubResource( 5 )
